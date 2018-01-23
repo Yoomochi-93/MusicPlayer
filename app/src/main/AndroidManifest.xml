@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.jhw_n_491.meidaplayer">
 
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -16,6 +18,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".MusicService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="FOREGROUND_PLAY"/>
+                <action android:name="FOREGROUND_FORWARD"/>
+                <action android:name="FOREGROUND_BACKWARD"/>
+                <action android:name="FOREGROUND_STOP"/>
+            </intent-filter>
+        </service>
+
+
+
     </application>
 
 </manifest>
