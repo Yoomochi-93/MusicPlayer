@@ -1,0 +1,52 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/img_albumart"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginLeft="5dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/notificationimage"/>
+
+    <TextView
+        android:id="@+id/txt_title"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="5dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:text="최신 인기 가요 TOP 30"
+        android:textColor="@android:color/black"/>
+
+    <ImageButton
+        android:id="@+id/foreground_backward"
+        android:layout_width="40dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="10dp"
+        android:background="@null"
+        android:src="@drawable/btn_backward"
+        android:scaleType="centerCrop"/>
+
+    <ImageButton
+        android:id="@+id/foreground_play"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginRight="10dp"
+        android:background="@null"
+        android:src="@drawable/btn_play"
+        android:scaleType="centerCrop"/>
+
+    <ImageButton
+        android:id="@+id/foreground_forward"
+        android:layout_width="40dp"
+        android:layout_height="42dp"
+        android:layout_marginRight="10dp"
+        android:background="@null"
+        android:src="@drawable/btn_forward"
+        android:scaleType="centerCrop"/>
+
+</LinearLayout>
