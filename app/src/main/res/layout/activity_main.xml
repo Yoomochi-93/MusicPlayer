@@ -39,6 +39,15 @@
         android:gravity="center">
 
         <Button
+            android:id="@+id/btn_forward"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="5dp"
+            android:layout_marginBottom="30dp"
+            android:text="forward"/>
+
+        <Button
             android:id="@+id/btn_play"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -57,22 +66,13 @@
             android:text="stop" />
 
         <Button
-            android:id="@+id/btn_forward"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_marginLeft="5dp"
-            android:layout_marginBottom="30dp"
-            android:text="forward"/>
-
-        <Button
             android:id="@+id/btn_backward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:layout_marginLeft="5dp"
             android:layout_marginBottom="30dp"
-            android:text="backward"/>
+            android:text="backward" />
 
     </LinearLayout>
 

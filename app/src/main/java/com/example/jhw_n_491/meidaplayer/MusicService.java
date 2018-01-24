@@ -13,11 +13,11 @@ import java.io.IOException;
 public class MusicService extends Service{
 
     MediaPlayer mMediaPlayer = null;
-    boolean isPrepared;
-
     MusicNotification music_notification;
 
+    boolean isPrepared;
 
+    // Notification & Media init
     @Override
     public void onCreate()
     {
@@ -28,8 +28,7 @@ public class MusicService extends Service{
         music_notification.ExpandedlayoutNotification();
         startForeground(music_notification.NOTIFICATION_PLAYER_ID, music_notification.mBuilder.build());
 
-        mMediaPlayer = MediaPlayer.create(this, R.raw.rain);
-        mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+        Preparse_music();
 
         mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
@@ -42,13 +41,6 @@ public class MusicService extends Service{
         mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                try {
-                    mMediaPlayer.setDataSource(getApplicationContext(), Uri.parse("android.resource://com.example.jhw_n_491.meidaplayer/"+R.raw.rain));
-                    mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                    mMediaPlayer.prepareAsync();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
                 isPrepared = false;;
             }
         });
@@ -74,6 +66,7 @@ public class MusicService extends Service{
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
+    // Service Action
     @Override
     public int onStartCommand(Intent intent, int flag, int startId)
     {
@@ -100,6 +93,7 @@ public class MusicService extends Service{
         return START_NOT_STICKY;
     }
 
+    // Destory Service
     @Override
     public void onDestroy()
     {
@@ -113,15 +107,18 @@ public class MusicService extends Service{
             {
                 music_notification.mNotificationManager.cancel(0x342);
                 music_notification.mNotificationManager = null;
+                stopForeground(true);
             }
         }
     }
 
+    // Playing music?
     public boolean isPlaying()
     {
         return mMediaPlayer.isPlaying();
     }
 
+    // Play Music
     public void Play_music()
     {
         if(isPrepared)
@@ -130,17 +127,34 @@ public class MusicService extends Service{
         }
     }
 
+    // Stop Music
     public void Stop_music()
     {
         mMediaPlayer.stop();
         mMediaPlayer.reset();
+        Preparse_music();
     }
 
+    // Pause Music
     public void Pause_music()
     {
         if(isPrepared)
         {
             mMediaPlayer.pause();
         }
+    }
+
+    //Init mMediaPlayer
+    public void Preparse_music()
+    {
+        mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+        try {
+            mMediaPlayer.setDataSource(getApplicationContext(), Uri.parse("android.resource://com.example.jhw_n_491.meidaplayer/"+R.raw.rain));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mMediaPlayer.prepareAsync();
     }
 }
