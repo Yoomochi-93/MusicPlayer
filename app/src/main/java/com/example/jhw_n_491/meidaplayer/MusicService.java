@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 
@@ -151,7 +152,7 @@ public class MusicService extends Service{
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
         try {
-            mMediaPlayer.setDataSource(getApplicationContext(), Uri.parse("android.resource://com.example.jhw_n_491.meidaplayer/"+R.raw.rain));
+            mMediaPlayer.setDataSource(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -3,6 +3,9 @@
     package="com.example.jhw_n_491.meidaplayer">
 
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"
@@ -30,9 +33,7 @@
                 <action android:name="FOREGROUND_STOP"/>
             </intent-filter>
         </service>
-
-
-
+        <service android:name=".DownloadService"/>
     </application>
 
 </manifest>
