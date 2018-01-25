@@ -1,8 +1,10 @@
 package com.example.jhw_n_491.meidaplayer;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -52,12 +54,16 @@ public class MainActivity extends AppCompatActivity {
 
         initUiComponents();
 
+        GlideDrawableImageViewTarget gifImage = new GlideDrawableImageViewTarget(cImage);
+        Glide.with(this).load(R.drawable.backgrounds).into(gifImage);
+
         // instantiate it within the onCreate method
         mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setMessage("최신가요 MP3 파일 다운로드 중...");
-        mProgressDialog.setIndeterminate(true);
+        mProgressDialog.setIndeterminate(false);
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        mProgressDialog.setCancelable(true);
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setMax(100);
 
         // this is how you fire the downloader
         mProgressDialog.show();
@@ -66,11 +72,8 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("url", "http://35.203.158.180/download/music.mp3");
         intent.putExtra("receiver", new DownloadReceiver(new Handler()));
         startService(intent);
-
-        GlideDrawableImageViewTarget gifImage = new GlideDrawableImageViewTarget(cImage);
-        Glide.with(this).load(R.drawable.backgrounds).into(gifImage);
-
     }
+
     private class DownloadReceiver extends ResultReceiver {
         public DownloadReceiver(Handler handler) {
             super(handler);
@@ -83,9 +86,23 @@ public class MainActivity extends AppCompatActivity {
                 int progress = resultData.getInt("progress");
                 mProgressDialog.setProgress(progress);
                 if (progress == 100) {
-                    mProgressDialog.dismiss();
+                    dismissProgressDialog();
                 }
             }
+        }
+    }
+
+    private void dismissProgressDialog() {
+        if (mProgressDialog == null || !mProgressDialog.isShowing())
+            return;
+        Context context = getApplicationContext();
+
+        if (context instanceof Activity) {
+            if(!((Activity)context).isFinishing()) {
+                mProgressDialog.dismiss();
+            }
+        } else {
+            mProgressDialog.dismiss();
         }
     }
 
@@ -130,5 +147,11 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        dismissProgressDialog();
+        super.onDestroy();
     }
 }
