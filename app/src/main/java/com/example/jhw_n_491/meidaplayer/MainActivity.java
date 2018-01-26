@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -78,6 +79,9 @@ public class MainActivity extends AppCompatActivity {
     // MP3 File Check
     private File mp3file;
     private boolean fileflag = true;
+
+    // Audio force
+    AudioManager am;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,6 +167,9 @@ public class MainActivity extends AppCompatActivity {
 
         // File Check
         mp3file = new File(Environment.getExternalStorageDirectory().toString()+ "/music.mp3");
+
+        // Audio force init
+        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
     }
 
     // SeekBar ClickListener
@@ -428,7 +435,6 @@ public class MainActivity extends AppCompatActivity {
                                 if(thread_flag && sync_time <= seekbar_playtime.getMax())
                                 {
                                     sync_time++;
-                                    Log.d("TEST","TIME : " + sync_time + ", MAX : " + seekbar_playtime.getMax());
                                     if(sync_time >= seekbar_playtime.getMax())
                                     {
                                         thread_flag = false;
@@ -454,7 +460,6 @@ public class MainActivity extends AppCompatActivity {
             switch (msg.what) {
                 case MusicService.MSG_SEND_TO_ACTIVITY:
                     seekbar_time = msg.getData().getInt("fromService");
-                    Log.d("TEST","TTT:" + seekbar_time);
                     seekbar_playtime.setMax(seekbar_time);
                     break;
                 case MusicService.MSG_SEND_SEEKBAR:

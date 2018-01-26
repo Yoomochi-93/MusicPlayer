@@ -2,6 +2,7 @@ package com.example.jhw_n_491.meidaplayer;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -36,12 +37,23 @@ public class MusicService extends Service{
     private Messenger mClient = null;
     private int sbposition = 0;
 
+    // Audio manager
+    AudioManager am;
+
     @Override
     public void onCreate()
     {
         super.onCreate();
 
         mMediaPlayer = new MediaPlayer();
+
+        focusChangeListener audioChangeListener = new focusChangeListener();
+        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        int focusResult = am.requestAudioFocus(audioChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN);
+
         music_notification = new MusicNotification(getApplicationContext());
 
         mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -57,7 +69,6 @@ public class MusicService extends Service{
             @Override
             public void onCompletion(MediaPlayer mp) {
                 try {
-                    Log.d("TEST","ASDAADSADASD");
                     mp.stop();
                     mp.reset();
                     mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -222,6 +233,7 @@ public class MusicService extends Service{
         {
             mMediaPlayer.pause();
             sendMsgToSEEKBAR("PLAY");
+            stopForeground(true);
         }
     }
 
@@ -279,6 +291,36 @@ public class MusicService extends Service{
             msg.setData(bundle);
             mClient.send(msg);      // msg 보내기
         } catch (RemoteException e) {
+        }
+    }
+
+    // Audio force
+    class focusChangeListener implements AudioManager.OnAudioFocusChangeListener{
+
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            switch (focusChange)
+            {
+                case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK):
+                    mMediaPlayer.setVolume(0.2f,0.2f);
+                    Log.d("TEST","LOSS_TRANSIENT_CAN_DUCK");
+                    break;
+                case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT):
+                    Pause_music();
+                    Log.d("TEST","AUDIOFOCUS_LOSS_TRANSIENT");
+                    break;
+                case (AudioManager.AUDIOFOCUS_LOSS):
+                    Pause_music();
+                    Log.d("TEST","AUDIOFOCUS_LOSS");
+                    break;
+                case (AudioManager.AUDIOFOCUS_GAIN):
+                    mMediaPlayer.setVolume(1,1);
+                    Play_music();
+                    Log.d("TEST","AUDIOFOCUS_GAIN");
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
