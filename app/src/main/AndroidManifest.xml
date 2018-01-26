@@ -14,7 +14,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -27,10 +29,13 @@
             android:enabled="true"
             android:exported="true">
             <intent-filter>
-                <action android:name="FOREGROUND_PLAY"/>
-                <action android:name="FOREGROUND_FORWARD"/>
-                <action android:name="FOREGROUND_BACKWARD"/>
-                <action android:name="FOREGROUND_STOP"/>
+                <action android:name="FOREGROUND_PLAY" />
+                <action android:name="FOREGROUND_FORWARD" />
+                <action android:name="FOREGROUND_BACKWARD" />
+                <action android:name="FOREGROUND_STOP" />
+                <action android:name="SEEKBAR_DOWN" />
+                <action android:name="SEEKBAR_UP" />
+                <action android:name="MP3CHECK"/>
             </intent-filter>
         </service>
         <service android:name=".DownloadService"/>
