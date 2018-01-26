@@ -2,12 +2,14 @@ package com.example.jhw_n_491.meidaplayer;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.os.Handler;
@@ -126,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
         BtnOnClickListener onClickListener = new BtnOnClickListener();
         BtnTouchEvent onTuchListener = new BtnTouchEvent();
         SeekBarClickListener onChangeListener = new SeekBarClickListener();
+        SharedPreferences sp = getSharedPreferences("Music_Player", Activity.MODE_PRIVATE);
 
         cImage = (ImageView)findViewById(R.id.gif_image);
         btn_play = (Button) findViewById(R.id.btn_play);
@@ -141,8 +144,25 @@ public class MainActivity extends AppCompatActivity {
 
         //Seekbar Listener
         seekbar_playtime = (SeekBar) findViewById(R.id.seekbar_paytime);
-        seekbar_playtime.setMax(0);
+        int sync_max;
+        try
+        {
+            sync_max = Integer.parseInt(sp.getString("sync_time_max", null));
+        } catch (NumberFormatException e) {
+            sync_max = 0;
+        }
+        seekbar_playtime.setMax(sync_max);
         seekbar_playtime.setOnTouchListener(onChangeListener);
+        if (isServiceRunningCheck()) {
+            try
+            {
+                sync_time = Integer.parseInt(sp.getString("sync_time", null));
+            } catch (NumberFormatException e) {
+                sync_time = 0;
+            }
+
+            seekbar_playtime.setProgress(sync_time);
+        }
 
         // Thread Init
         sampleThread = new wardThread();
@@ -186,7 +206,14 @@ public class MainActivity extends AppCompatActivity {
                     else if(event.getAction() == MotionEvent.ACTION_UP)
                     {
                         try {
+                            SharedPreferences sp = getSharedPreferences("Music_Player", Activity.MODE_PRIVATE);
+                            SharedPreferences.Editor editor = sp.edit();
+
+
                             sync_time = seekbar_playtime.getProgress();
+                            editor.putString("sync_time", String.valueOf(sync_time));
+                            editor.apply();
+
                             sbup_intent.putExtra("seekbar","SEEKBAR_UP");
                             sbup_intent.putExtra("sbposition",sync_time);
                             sbup_pending = PendingIntent.getService(getApplicationContext(),0,sbup_intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -315,17 +342,28 @@ public class MainActivity extends AppCompatActivity {
             mProgressDialog.dismiss();
         }
 
-        if(fileflag == true)
+        if(fileflag == true && !isServiceRunningCheck())
         {
             CheckMPFile();
         }
     }
 
+    private boolean isServiceRunningCheck() {
+        ActivityManager manager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if ("com.example.jhw_n_491.meidaplayer.MusicService".equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
     // service start, stop, connection
     private void setStartService()
     {
-        startService(new Intent(MainActivity.this, MusicService.class));
-        isBound = bindService(new Intent(this, MusicService.class), mConnection, Context.BIND_AUTO_CREATE);
+        // bind to the Service
+        final Intent serviceIntent = new Intent(MainActivity.this,  MusicService.class);
+        startService(serviceIntent);
+        isBound = bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void setStopService()
@@ -456,6 +494,11 @@ public class MainActivity extends AppCompatActivity {
                     seekbar_time = msg.getData().getInt("fromService");
                     Log.d("TEST","TTT:" + seekbar_time);
                     seekbar_playtime.setMax(seekbar_time);
+
+                    SharedPreferences sp = getSharedPreferences("Music_Player", Activity.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sp.edit();
+                    editor.putString("sync_time_max", String.valueOf(seekbar_time));
+                    editor.apply();
                     break;
                 case MusicService.MSG_SEND_SEEKBAR:
                     seekbar_status = msg.getData().getString("fromSeekbar");
