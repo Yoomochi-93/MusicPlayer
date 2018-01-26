@@ -4,21 +4,20 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Handler;
-import android.os.ResultReceiver;
-import android.os.Handler;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.ResultReceiver;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,8 +30,9 @@ import android.widget.SeekBar;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 
-public class MainActivity extends AppCompatActivity {
+import java.io.File;
 
+public class MainActivity extends AppCompatActivity {
 
     // Compents
     ImageView cImage;
@@ -42,6 +42,12 @@ public class MainActivity extends AppCompatActivity {
     // Status Action
     final String PLAY_BUTTON = "FOREGROUND_PLAY";
     final String STOP_BUTTON = "FOREGROUND_STOP";
+    final String FORWARD_BUTTON = "FOREGROUND_FORWARD";
+    final String BACKWARD_BUTTON = "FOREGROUND_BACKWARD";
+    final String SEEKBAR_DOWN = "SEEKBAR_DOWN";
+    final String SEEKBAR_UP = "SEEKBAR_UP";
+    final String MP3CHECK_SERVICE = "MP3CHECK";
+
     private static final int REQUEST_EXTERNAL_STORAGE = 2;
     final String FORWARD_BUTTON = "FOREGROUND_FORWARD";
     final String BACKWARD_BUTTON = "FOREGROUND_BACKWARD";
@@ -49,10 +55,12 @@ public class MainActivity extends AppCompatActivity {
     final String SEEKBAR_UP = "SEEKBAR_UP";
 
     // Service Object
-    Intent play_intent, stop_intent, forward_intent, backward_intent, sbup_intent, sbdown_intent;
-    PendingIntent play_pending, stop_pending, forward_pending, backward_pending, sbup_pending, sbdown_pending;
+    Intent play_intent, stop_intent, forward_intent, backward_intent, sbup_intent, sbdown_intent, mp3check_intent;
+    PendingIntent play_pending, stop_pending, forward_pending, backward_pending, sbup_pending, sbdown_pending, mp3check_pending;
 
+    //ProgressDialog
     ProgressDialog mProgressDialog;
+
     // messenger
     private Messenger mServiceMessenger = null;
     private boolean mIsBound;
@@ -72,6 +80,29 @@ public class MainActivity extends AppCompatActivity {
     public static String wardString = "";
     Thread sampleThread;
 
+    // messenger
+    private Messenger mServiceMessenger = null;
+    private boolean mIsBound;
+
+    // Seekbar Time
+    int seekbar_time = 0;
+    int sync_time = 0;
+    String seekbar_status;
+
+
+    // Thread & Bind flag
+    private boolean thread_flag = false;
+    private boolean isBound = false;
+
+    // forward, backward flag
+    public static boolean wardflag = false;
+    public static String wardString = "";
+    Thread sampleThread;
+
+    // MP3 File Check
+    private File mp3file;
+    private boolean fileflag = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this,
                                     new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE},
                                     REQUEST_EXTERNAL_STORAGE);
+            fileflag = false;
             finish();
         }
 
@@ -108,52 +140,15 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("receiver", new DownloadReceiver(new Handler()));
         startService(intent);
 	
-        setStartService();
-        runThread();
     }
 
-    private class DownloadReceiver extends ResultReceiver {
-        public DownloadReceiver(Handler handler) {
-            super(handler);
-        }
-
-        @Override
-        protected void onReceiveResult(int resultCode, Bundle resultData) {
-            super.onReceiveResult(resultCode, resultData);
-            if (resultCode == DownloadService.UPDATE_PROGRESS) {
-                int progress = resultData.getInt("progress");
-                mProgressDialog.setProgress(progress);
-                if (progress == 100) {
-                    dismissProgressDialog();
-                }
-            }
-        }
-    }
-
-    private void dismissProgressDialog() {
-        if (mProgressDialog == null || !mProgressDialog.isShowing())
-            return;
-        Context context = getApplicationContext();
-
-        if (context instanceof Activity) {
-            if(!((Activity)context).isFinishing()) {
-                mProgressDialog.dismiss();
-            }
-        } else {
-            mProgressDialog.dismiss();
-        }
-
-    }
-
+    // UI Init
     void initUiComponents()
     {
         // Components init
         BtnOnClickListener onClickListener = new BtnOnClickListener();
         BtnTouchEvent onTuchListener = new BtnTouchEvent();
         SeekBarClickListener onChangeListener = new SeekBarClickListener();
-
-        sampleThread = new wardThread();
-        sampleThread.start();
 
         cImage = (ImageView)findViewById(R.id.gif_image);
         btn_play = (Button) findViewById(R.id.btn_play);
@@ -167,9 +162,14 @@ public class MainActivity extends AppCompatActivity {
         btn_backward = (Button) findViewById(R.id.btn_backward);
         btn_backward.setOnTouchListener(onTuchListener);
 
+        //Seekbar Listener
         seekbar_playtime = (SeekBar) findViewById(R.id.seekbar_paytime);
         seekbar_playtime.setMax(0);
         seekbar_playtime.setOnTouchListener(onChangeListener);
+
+        // Thread Init
+        sampleThread = new wardThread();
+        sampleThread.start();
 
         // Button intent init
         play_intent = new Intent(PLAY_BUTTON);
@@ -178,12 +178,17 @@ public class MainActivity extends AppCompatActivity {
         backward_intent = new Intent(BACKWARD_BUTTON);
         sbup_intent = new Intent(SEEKBAR_UP);
         sbdown_intent = new Intent(SEEKBAR_DOWN);
+        mp3check_intent = new Intent(MP3CHECK_SERVICE);
 
         // Button Pending Intent init
         play_pending = PendingIntent.getService(getApplicationContext(), 0, play_intent, 0);
         stop_pending = PendingIntent.getService(getApplicationContext(), 0 , stop_intent, 0);
+
+        // File Check
+        mp3file = new File(Environment.getExternalStorageDirectory().toString()+ "/music.mp3");
     }
 
+    // SeekBar ClickListener
     class SeekBarClickListener implements SeekBar.OnTouchListener{
 
         @Override
@@ -219,6 +224,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Btn ClickListener
     class BtnOnClickListener implements Button.OnClickListener{
 
         @Override
@@ -245,6 +251,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Btn TouchEvent
     class BtnTouchEvent implements Button.OnTouchListener{
 
         @Override
@@ -300,10 +307,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private class DownloadReceiver extends ResultReceiver {
+        public DownloadReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            super.onReceiveResult(resultCode, resultData);
+            if (resultCode == DownloadService.UPDATE_PROGRESS) {
+                int progress = resultData.getInt("progress");
+                mProgressDialog.setProgress(progress);
+                if (progress == 100) {
+                    dismissProgressDialog();
+                }
+            }
+        }
+    }
+
+    private void dismissProgressDialog() {
+        if (mProgressDialog == null || !mProgressDialog.isShowing())
+            return;
+        Context context = getApplicationContext();
+
+        if (context instanceof Activity) {
+            if(!((Activity)context).isFinishing()) {
+                mProgressDialog.dismiss();
+            }
+        } else {
+            mProgressDialog.dismiss();
+        }
+
+        if(fileflag == true)
+        {
+            CheckMPFile();
+        }
+    }
+
     // service start, stop, connection
     private void setStartService()
     {
-
         startService(new Intent(MainActivity.this, MusicService.class));
         isBound = bindService(new Intent(this, MusicService.class), mConnection, Context.BIND_AUTO_CREATE);
     }
@@ -327,7 +370,6 @@ public class MainActivity extends AppCompatActivity {
                 Message msg = Message.obtain(null, MusicService.MSG_REGISTER_CLIENT);
                 msg.replyTo = mMessenger;
                 mServiceMessenger.send(msg);
-
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -340,6 +382,21 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    public void CheckMPFile()
+    {
+        try {
+            Log.d("TEST","ASD");
+            setStartService();
+            runThread();
+            mp3check_intent.putExtra("mp3Check","exists");
+            mp3check_pending = PendingIntent.getService(getApplicationContext(),0,mp3check_intent,0);
+            mp3check_pending.send(getApplicationContext(), 0, mp3check_intent);
+        } catch (PendingIntent.CanceledException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Backward, forward Thread
     public class wardThread extends Thread
     {
         public void run()
@@ -381,6 +438,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Seekbar Thread
     private void runThread() {
 
         new Thread() {
@@ -412,9 +470,9 @@ public class MainActivity extends AppCompatActivity {
         }.start();
     }
 
-
     // Service로 부터 message를 받음
-    private final Messenger mMessenger = new Messenger(new Handler(new Handler.Callback() {
+    private final Messenger mMessenger = new Messenger(new Handler(new Handler.Callback()
+    {
         @Override
         public boolean handleMessage(Message msg) {
             switch (msg.what) {
@@ -445,9 +503,9 @@ public class MainActivity extends AppCompatActivity {
                 default:
                     break;
             }
-            return false;
         }
-    }));
+    }
+
 
     // Service로 Message 전송
     private void sendMessageToService(String str) {
@@ -460,8 +518,9 @@ public class MainActivity extends AppCompatActivity {
                 } catch (RemoteException e) {
                 }
             }
+            return false;
         }
-    }
+    }));
 
     // bind 해제
     public void onBackPressed()
@@ -475,19 +534,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected  void onDestroy()
-    {
+    protected void onDestroy() {
+        dismissProgressDialog();
         if(isBound)
         {
             unbindService(mConnection);
             isBound = false;
         }
-        super.onDestroy();
-    }
-
-    @Override
-    protected void onDestroy() {
-        dismissProgressDialog();
         super.onDestroy();
     }
 }

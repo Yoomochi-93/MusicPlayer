@@ -6,8 +6,8 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -15,7 +15,6 @@ import android.os.Messenger;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.util.Log;
-
 import java.io.IOException;
 
 public class MusicService extends Service{
@@ -42,8 +41,7 @@ public class MusicService extends Service{
     {
         super.onCreate();
 
-        Preparse_music();
-
+        mMediaPlayer = new MediaPlayer();
         music_notification = new MusicNotification(getApplicationContext());
 
         mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -62,7 +60,7 @@ public class MusicService extends Service{
                     mp.reset();
                     mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
                     mp.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
-                    mp.setDataSource(getApplicationContext(), Uri.parse("android.resource://com.example.jhw_n_491.meidaplayer/"+R.raw.rain));
+                    mp.setDataSource(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -163,6 +161,13 @@ public class MusicService extends Service{
                     Play_music();
                 }
             }
+            else if("MP3CHECK".equals(action))
+            {
+                if(intent.getStringExtra("mp3Check").contains("exists"))
+                {
+                    Preparse_music();
+                }
+            }
         }
 
         return START_NOT_STICKY;
@@ -228,6 +233,51 @@ public class MusicService extends Service{
             e.printStackTrace();
         }
         mMediaPlayer.prepareAsync();
+        Log.d("TEST","TTT : " + (mMediaPlayer.getDuration()/1000));
+    }
+
+    // Binder Setting
+    private final Messenger mMessenger = new Messenger(new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            Log.w("test","ControlService - message what : "+msg.what +" , msg.obj "+ msg.obj);
+            switch (msg.what)
+            {
+                case MSG_REGISTER_CLIENT:
+                    // activity로부터 가져온
+                    mClient = msg.replyTo;
+                    sendMsgToActivity((mMediaPlayer.getDuration()/1000));
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        }
+    }));
+
+    // Activity로 메시지 보내기
+    private void sendMsgToActivity(int sendValue)
+    {
+        try{
+            Bundle bundle = new Bundle();
+            bundle.putInt("fromService", sendValue);
+            Message msg = Message.obtain(null, MSG_SEND_TO_ACTIVITY);
+            msg.setData(bundle);
+            mClient.send(msg);      // msg 보내기
+        } catch (RemoteException e) {
+        }
+    }
+
+    private void sendMsgToSEEKBAR(String seekbar_status)
+    {
+        try{
+            Bundle bundle = new Bundle();
+            bundle.putString("fromSeekbar", seekbar_status);
+            Message msg = Message.obtain(null, MSG_SEND_SEEKBAR);
+            msg.setData(bundle);
+            mClient.send(msg);      // msg 보내기
+        } catch (RemoteException e) {
+        }
     }
 
     // Binder Setting

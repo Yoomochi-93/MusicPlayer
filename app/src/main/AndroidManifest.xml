@@ -35,6 +35,7 @@
                 <action android:name="FOREGROUND_STOP" />
                 <action android:name="SEEKBAR_DOWN" />
                 <action android:name="SEEKBAR_UP" />
+                <action android:name="MP3CHECK"/>
             </intent-filter>
         </service>
         <service android:name=".DownloadService"/>
