@@ -1,12 +1,10 @@
 package com.example.jhw_n_491.meidaplayer;
 
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -26,6 +24,7 @@ public class MusicService extends Service{
 
     // music prepard check
     boolean isPrepared;
+    boolean mp3Check = true;
 
     // Service Message\
     public static final int MSG_REGISTER_CLIENT = 10;
@@ -36,7 +35,7 @@ public class MusicService extends Service{
     // Activity 에서 가져온 Messenger
     private Messenger mClient = null;
     private int sbposition = 0;
-
+    private boolean mp3check = true;
     // Audio manager
     AudioManager am;
 
@@ -110,7 +109,6 @@ public class MusicService extends Service{
         if(intent != null)
         {
             String action = intent.getAction();
-            Log.d("TEST","Action : " + action);
             if("FOREGROUND_PLAY".equals(action))
             {
                 if(isPlaying())
@@ -177,10 +175,15 @@ public class MusicService extends Service{
             }
             else if("MP3CHECK".equals(action))
             {
-                Log.d("TEST","MP3CHECK");
                 if(intent.getStringExtra("mp3Check").contains("exists"))
                 {
-                    Preparse_music();
+                    if(mp3check == true)
+                    {
+                        Log.d("TEST","asdaad : " + mp3Check);
+                        Preparse_music();
+                        mp3check = false;
+                    }
+
                 }
             }
         }
@@ -256,7 +259,6 @@ public class MusicService extends Service{
     private final Messenger mMessenger = new Messenger(new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
-            Log.w("test","ControlService - message what : "+msg.what +" , msg.obj "+ msg.obj);
             switch (msg.what)
             {
                 case MSG_REGISTER_CLIENT:
@@ -303,20 +305,16 @@ public class MusicService extends Service{
             {
                 case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK):
                     mMediaPlayer.setVolume(0.2f,0.2f);
-                    Log.d("TEST","LOSS_TRANSIENT_CAN_DUCK");
                     break;
                 case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT):
                     Pause_music();
-                    Log.d("TEST","AUDIOFOCUS_LOSS_TRANSIENT");
                     break;
                 case (AudioManager.AUDIOFOCUS_LOSS):
                     Pause_music();
-                    Log.d("TEST","AUDIOFOCUS_LOSS");
                     break;
                 case (AudioManager.AUDIOFOCUS_GAIN):
                     mMediaPlayer.setVolume(1,1);
                     Play_music();
-                    Log.d("TEST","AUDIOFOCUS_GAIN");
                     break;
                 default:
                     break;

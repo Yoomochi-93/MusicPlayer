@@ -72,18 +72,16 @@ public class MainActivity extends AppCompatActivity {
     // Thread & Bind flag
     private boolean thread_flag = false;
     private boolean isBound = false;
+    private boolean isThread;
 
     // forward, backward flag
     public static boolean wardflag = false;
     public static String wardString = "";
-    Thread sampleThread;
+    Thread wardbtnThread, runTimeThread;
 
     // MP3 File Check
     private File mp3file;
     private boolean fileflag = true;
-
-    // Audio force
-    AudioManager am;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,8 +93,8 @@ public class MainActivity extends AppCompatActivity {
 
         if(permissionReadStorage == PackageManager.PERMISSION_DENIED || permissionWriteStorage == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(this,
-                                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                                    REQUEST_EXTERNAL_STORAGE);
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_EXTERNAL_STORAGE);
             fileflag = false;
             finish();
         }
@@ -121,8 +119,12 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("url", "http://35.203.158.180/download/music.mp3");
         intent.putExtra("receiver", new DownloadReceiver(new Handler()));
         startService(intent);
+
+
         setStartService();
-        runThread();
+        isThread = true;
+        runTimeThread.start();
+
     }
 
     // UI Init
@@ -169,8 +171,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Thread Init
-        sampleThread = new wardThread();
-        sampleThread.start();
+        wardbtnThread = new wardThread();
+        wardbtnThread.start();
+
+        runTimeThread = new runThread();
 
         // Button intent init
         play_intent = new Intent(PLAY_BUTTON);
@@ -188,8 +192,17 @@ public class MainActivity extends AppCompatActivity {
         // File Check
         mp3file = new File(Environment.getExternalStorageDirectory().toString()+ "/music.mp3");
 
-        // Audio force init
-        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    }
+
+    // Service Check
+    private boolean isServiceRunningCheck() {
+        ActivityManager manager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if ("com.example.jhw_n_491.meidaplayer.MusicService".equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // SeekBar ClickListener
@@ -349,21 +362,12 @@ public class MainActivity extends AppCompatActivity {
             mProgressDialog.dismiss();
         }
 
-        if(fileflag == true && !isServiceRunningCheck())
+        if(fileflag == true)
         {
             CheckMPFile();
         }
     }
 
-    private boolean isServiceRunningCheck() {
-        ActivityManager manager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if ("com.example.jhw_n_491.meidaplayer.MusicService".equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
     // service start, stop, connection
     private void setStartService()
     {
@@ -407,11 +411,9 @@ public class MainActivity extends AppCompatActivity {
     public void CheckMPFile()
     {
         try {
-                Log.d("TEST","ASD");
-
-                mp3check_intent.putExtra("mp3Check","exists");
-                mp3check_pending = PendingIntent.getService(getApplicationContext(),0,mp3check_intent,0);
-                mp3check_pending.send(getApplicationContext(), 0, mp3check_intent);
+            mp3check_intent.putExtra("mp3Check","exists");
+            mp3check_pending = PendingIntent.getService(getApplicationContext(),0,mp3check_intent,0);
+            mp3check_pending.send(getApplicationContext(), 0, mp3check_intent);
         } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
         }
@@ -459,36 +461,35 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Seekbar Thread
-    private void runThread() {
+    public class runThread extends Thread
+    {
+        public void run()
+        {
+            while (isThread) {
+                try {
+                    runOnUiThread(new Runnable() {
 
-        new Thread() {
-            public void run() {
-                while (true) {
-                    try {
-                        runOnUiThread(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                if(thread_flag && sync_time <= seekbar_playtime.getMax())
+                        @Override
+                        public void run() {
+                            Log.d("Test"," adadasdsadsadsadsadsadsad");
+                            if(thread_flag && sync_time <= seekbar_playtime.getMax())
+                            {
+                                sync_time++;
+                                if(sync_time >= seekbar_playtime.getMax())
                                 {
-                                    sync_time++;
-                                    if(sync_time >= seekbar_playtime.getMax())
-                                    {
-                                        thread_flag = false;
-                                        sync_time = 0;
-                                    }
-                                    seekbar_playtime.setProgress(sync_time);
+                                    thread_flag = false;
+                                    sync_time = 0;
                                 }
+                                seekbar_playtime.setProgress(sync_time);
                             }
-                        });
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                        }
+                    });
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-        }.start();
+        }
     }
 
     // Service로 부터 message를 받음
@@ -560,6 +561,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         dismissProgressDialog();
+        isThread = false;
         if(isBound)
         {
             unbindService(mConnection);
