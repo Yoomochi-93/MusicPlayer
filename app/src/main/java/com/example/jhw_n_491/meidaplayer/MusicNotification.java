@@ -7,6 +7,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.RemoteViews;
 
 public class MusicNotification {
@@ -16,8 +20,11 @@ public class MusicNotification {
     NotificationCompat.Builder mBuilder;
     Intent main_back, music_play, music_forward, music_backward;
     PendingIntent main_pintent, play_pintent, forward_pintent, backward_pintent;
-    NotificationManager mNotificationManager;
+    NotificationManager mNotificationManager = null;
     final static int NOTIFICATION_PLAYER_ID = 0x342;
+
+
+    ImageButton fg_forard, fg_backward;
 
     public MusicNotification(Context recv_context)
     {
@@ -61,13 +68,15 @@ public class MusicNotification {
     public void init()
     {
         main_back = new Intent(mContext.getApplicationContext(), MainActivity.class);
+        main_back.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
         music_play = new Intent("FOREGROUND_PLAY");
         music_forward = new Intent("FOREGROUND_FORWARD");
         music_backward = new Intent("FOREGROUND_BACKWARD");
 
-        main_pintent = PendingIntent.getActivity(mContext.getApplicationContext(),0,main_back,PendingIntent.FLAG_UPDATE_CURRENT);
+        main_pintent = PendingIntent.getActivity(mContext.getApplicationContext(),0,main_back,0);
         play_pintent = PendingIntent.getService(mContext.getApplicationContext(), 0, music_play, 0);
         forward_pintent = PendingIntent.getService(mContext.getApplicationContext(), 0, music_forward, 0);
-        backward_pintent = PendingIntent.getService(mContext.getApplicationContext(), 0, music_backward, 0);
+        backward_pintent = PendingIntent.getService(mContext.getApplicationContext(), 99, music_backward, 0);
     }
 }

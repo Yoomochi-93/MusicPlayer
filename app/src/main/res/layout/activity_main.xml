@@ -39,13 +39,13 @@
         android:gravity="center">
 
         <Button
-            android:id="@+id/btn_forward"
+            android:id="@+id/btn_backward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_marginLeft="5dp"
+            android:layout_marginLeft="2dp"
             android:layout_marginBottom="30dp"
-            android:text="forward"/>
+            android:text="backward"/>
 
         <Button
             android:id="@+id/btn_play"
@@ -66,13 +66,13 @@
             android:text="stop" />
 
         <Button
-            android:id="@+id/btn_backward"
+            android:id="@+id/btn_forward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:layout_marginLeft="5dp"
             android:layout_marginBottom="30dp"
-            android:text="backward" />
+            android:text="forward" />
 
     </LinearLayout>
 
