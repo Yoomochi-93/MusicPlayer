@@ -47,12 +47,7 @@ public class MainActivity extends AppCompatActivity {
     final String SEEKBAR_DOWN = "SEEKBAR_DOWN";
     final String SEEKBAR_UP = "SEEKBAR_UP";
     final String MP3CHECK_SERVICE = "MP3CHECK";
-
     private static final int REQUEST_EXTERNAL_STORAGE = 2;
-    final String FORWARD_BUTTON = "FOREGROUND_FORWARD";
-    final String BACKWARD_BUTTON = "FOREGROUND_BACKWARD";
-    final String SEEKBAR_DOWN = "SEEKBAR_DOWN";
-    final String SEEKBAR_UP = "SEEKBAR_UP";
 
     // Service Object
     Intent play_intent, stop_intent, forward_intent, backward_intent, sbup_intent, sbdown_intent, mp3check_intent;
@@ -61,26 +56,7 @@ public class MainActivity extends AppCompatActivity {
     //ProgressDialog
     ProgressDialog mProgressDialog;
 
-    // messenger
-    private Messenger mServiceMessenger = null;
-    private boolean mIsBound;
-
-    // Seekbar Time
-    int seekbar_time = 0;
-    int sync_time = 0;
-    String seekbar_status;
-
-
-    // Thread & Bind flag
-    private boolean thread_flag = false;
-    private boolean isBound = false;
-
-    // forward, backward flag
-    public static boolean wardflag = false;
-    public static String wardString = "";
-    Thread sampleThread;
-
-    // messenger
+    // messengee
     private Messenger mServiceMessenger = null;
     private boolean mIsBound;
 
@@ -139,7 +115,8 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("url", "http://35.203.158.180/download/music.mp3");
         intent.putExtra("receiver", new DownloadReceiver(new Handler()));
         startService(intent);
-	
+        setStartService();
+        runThread();
     }
 
     // UI Init
@@ -385,12 +362,11 @@ public class MainActivity extends AppCompatActivity {
     public void CheckMPFile()
     {
         try {
-            Log.d("TEST","ASD");
-            setStartService();
-            runThread();
-            mp3check_intent.putExtra("mp3Check","exists");
-            mp3check_pending = PendingIntent.getService(getApplicationContext(),0,mp3check_intent,0);
-            mp3check_pending.send(getApplicationContext(), 0, mp3check_intent);
+                Log.d("TEST","ASD");
+
+                mp3check_intent.putExtra("mp3Check","exists");
+                mp3check_pending = PendingIntent.getService(getApplicationContext(),0,mp3check_intent,0);
+                mp3check_pending.send(getApplicationContext(), 0, mp3check_intent);
         } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
         }
@@ -452,7 +428,8 @@ public class MainActivity extends AppCompatActivity {
                                 if(thread_flag && sync_time <= seekbar_playtime.getMax())
                                 {
                                     sync_time++;
-                                    if(sync_time == seekbar_playtime.getMax())
+                                    Log.d("TEST","TIME : " + sync_time + ", MAX : " + seekbar_playtime.getMax());
+                                    if(sync_time >= seekbar_playtime.getMax())
                                     {
                                         thread_flag = false;
                                         sync_time = 0;
@@ -471,13 +448,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Service로 부터 message를 받음
-    private final Messenger mMessenger = new Messenger(new Handler(new Handler.Callback()
-    {
+    private final Messenger mMessenger = new Messenger(new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
             switch (msg.what) {
                 case MusicService.MSG_SEND_TO_ACTIVITY:
                     seekbar_time = msg.getData().getInt("fromService");
+                    Log.d("TEST","TTT:" + seekbar_time);
                     seekbar_playtime.setMax(seekbar_time);
                     break;
                 case MusicService.MSG_SEND_SEEKBAR:
@@ -503,9 +480,9 @@ public class MainActivity extends AppCompatActivity {
                 default:
                     break;
             }
+            return false;
         }
-    }
-
+    }));
 
     // Service로 Message 전송
     private void sendMessageToService(String str) {
@@ -518,9 +495,8 @@ public class MainActivity extends AppCompatActivity {
                 } catch (RemoteException e) {
                 }
             }
-            return false;
         }
-    }));
+    }
 
     // bind 해제
     public void onBackPressed()

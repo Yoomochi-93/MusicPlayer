@@ -48,6 +48,7 @@ public class MusicService extends Service{
             @Override
             public void onPrepared(MediaPlayer mp) {
                 isPrepared = true;
+                sendMsgToActivity((mp.getDuration()/1000));
             }
         });
 
@@ -56,15 +57,16 @@ public class MusicService extends Service{
             @Override
             public void onCompletion(MediaPlayer mp) {
                 try {
+                    Log.d("TEST","ASDAADSADASD");
                     mp.stop();
                     mp.reset();
                     mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
                     mp.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
                     mp.setDataSource(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
+                    mp.prepareAsync();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                mp.prepareAsync();
             }
         });
 
@@ -97,6 +99,7 @@ public class MusicService extends Service{
         if(intent != null)
         {
             String action = intent.getAction();
+            Log.d("TEST","Action : " + action);
             if("FOREGROUND_PLAY".equals(action))
             {
                 if(isPlaying())
@@ -163,6 +166,7 @@ public class MusicService extends Service{
             }
             else if("MP3CHECK".equals(action))
             {
+                Log.d("TEST","MP3CHECK");
                 if(intent.getStringExtra("mp3Check").contains("exists"))
                 {
                     Preparse_music();
@@ -224,16 +228,16 @@ public class MusicService extends Service{
     //Init mMediaPlayer
     public void Preparse_music()
     {
-        mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.reset();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
         try {
             mMediaPlayer.setDataSource(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
+            mMediaPlayer.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        mMediaPlayer.prepareAsync();
-        Log.d("TEST","TTT : " + (mMediaPlayer.getDuration()/1000));
+
     }
 
     // Binder Setting
@@ -244,53 +248,7 @@ public class MusicService extends Service{
             switch (msg.what)
             {
                 case MSG_REGISTER_CLIENT:
-                    // activity로부터 가져온
                     mClient = msg.replyTo;
-                    sendMsgToActivity((mMediaPlayer.getDuration()/1000));
-                    break;
-                default:
-                    break;
-            }
-            return false;
-        }
-    }));
-
-    // Activity로 메시지 보내기
-    private void sendMsgToActivity(int sendValue)
-    {
-        try{
-            Bundle bundle = new Bundle();
-            bundle.putInt("fromService", sendValue);
-            Message msg = Message.obtain(null, MSG_SEND_TO_ACTIVITY);
-            msg.setData(bundle);
-            mClient.send(msg);      // msg 보내기
-        } catch (RemoteException e) {
-        }
-    }
-
-    private void sendMsgToSEEKBAR(String seekbar_status)
-    {
-        try{
-            Bundle bundle = new Bundle();
-            bundle.putString("fromSeekbar", seekbar_status);
-            Message msg = Message.obtain(null, MSG_SEND_SEEKBAR);
-            msg.setData(bundle);
-            mClient.send(msg);      // msg 보내기
-        } catch (RemoteException e) {
-        }
-    }
-
-    // Binder Setting
-    private final Messenger mMessenger = new Messenger(new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-            Log.w("test","ControlService - message what : "+msg.what +" , msg.obj "+ msg.obj);
-            switch (msg.what)
-            {
-                case MSG_REGISTER_CLIENT:
-                    // activity로부터 가져온
-                    mClient = msg.replyTo;
-                    sendMsgToActivity((mMediaPlayer.getDuration()/1000));
                     break;
                 default:
                     break;

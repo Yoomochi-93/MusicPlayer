@@ -24,8 +24,6 @@ public class MusicNotification {
     final static int NOTIFICATION_PLAYER_ID = 0x342;
 
 
-    ImageButton fg_forard, fg_backward;
-
     public MusicNotification(Context recv_context)
     {
         mContext = recv_context;
