@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.ResultReceiver;
+import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

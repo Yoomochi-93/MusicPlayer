@@ -83,6 +83,14 @@ public class MainActivity extends AppCompatActivity {
     private File mp3file;
     private boolean fileflag = true;
 
+    // Service stop
+    String testmsg = "IMSI";
+
+
+    // Audio manager
+    AudioManager am;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -130,6 +138,14 @@ public class MainActivity extends AppCompatActivity {
     // UI Init
     void initUiComponents()
     {
+        focusChangeListener audioChangeListener = new focusChangeListener();
+
+        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        int focusResult = am.requestAudioFocus(audioChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN);
+
         // Components init
         BtnOnClickListener onClickListener = new BtnOnClickListener();
         BtnTouchEvent onTuchListener = new BtnTouchEvent();
@@ -264,6 +280,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case R.id.btn_stop:
                     try {
+                        setStopService();
                         stop_pending.send(getApplicationContext(),2,stop_intent);
                     } catch (PendingIntent.CanceledException e) {
                         e.printStackTrace();
@@ -377,7 +394,7 @@ public class MainActivity extends AppCompatActivity {
         isBound = bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
-    private void setStopService()
+    public void setStopService()
     {
         if(mIsBound)
         {
@@ -471,7 +488,6 @@ public class MainActivity extends AppCompatActivity {
 
                         @Override
                         public void run() {
-                            Log.d("Test"," adadasdsadsadsadsadsadsad");
                             if(thread_flag && sync_time <= seekbar_playtime.getMax())
                             {
                                 sync_time++;
@@ -526,6 +542,13 @@ public class MainActivity extends AppCompatActivity {
                         seekbar_playtime.setProgress(0);
                     }
                     break;
+                case MusicService.MSG_SEND_STOPSERVICE:
+                    testmsg = msg.getData().getString("ServiceStop");
+                    if(testmsg.contains("STOP"))
+                    {
+                        setStopService();
+                    }
+                    break;
                 default:
                     break;
             }
@@ -562,11 +585,44 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         dismissProgressDialog();
         isThread = false;
+
         if(isBound)
         {
             unbindService(mConnection);
             isBound = false;
         }
         super.onDestroy();
+    }
+
+    // Audio force
+    class focusChangeListener implements AudioManager.OnAudioFocusChangeListener{
+
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            switch (focusChange)
+            {
+                case (AudioManager.AUDIOFOCUS_LOSS):
+                    try {
+                        if(MusicService.playcheck == true)
+                        {
+                            play_pending.send(getApplicationContext(), 1, play_intent);
+                        }
+                    } catch (PendingIntent.CanceledException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case (AudioManager.AUDIOFOCUS_GAIN):
+                    try {
+                        if(MusicService.playcheck == false) {
+                            play_pending.send(getApplicationContext(), 1, play_intent);
+                        }
+                    } catch (PendingIntent.CanceledException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

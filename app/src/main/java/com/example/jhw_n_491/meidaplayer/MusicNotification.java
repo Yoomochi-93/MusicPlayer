@@ -64,7 +64,10 @@ public class MusicNotification {
         main_back.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         music_play = new Intent("FOREGROUND_PLAY");
+        music_play.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
         music_stop = new Intent("FOREGROUND_STOP");
+        music_stop.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         main_pintent = PendingIntent.getActivity(mContext.getApplicationContext(),0,main_back,0);
         play_pintent = PendingIntent.getService(mContext.getApplicationContext(), 0, music_play, 0);

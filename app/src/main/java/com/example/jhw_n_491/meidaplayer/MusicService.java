@@ -1,7 +1,6 @@
 package com.example.jhw_n_491.meidaplayer;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -13,7 +12,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.PowerManager;
 import android.os.RemoteException;
-import android.util.Log;
 import java.io.IOException;
 
 public class MusicService extends Service{
@@ -31,13 +29,13 @@ public class MusicService extends Service{
     public static final int MSG_SEND_TO_SERVICE = 11;
     public static final int MSG_SEND_TO_ACTIVITY = 12;
     public static final int MSG_SEND_SEEKBAR = 13;
+    public static final int MSG_SEND_STOPSERVICE = 14;
 
     // Activity 에서 가져온 Messenger
     private Messenger mClient = null;
     private int sbposition = 0;
     private boolean mp3check = true;
-    // Audio manager
-    AudioManager am;
+    public static boolean playcheck = false;
 
     @Override
     public void onCreate()
@@ -45,13 +43,6 @@ public class MusicService extends Service{
         super.onCreate();
 
         mMediaPlayer = new MediaPlayer();
-
-        focusChangeListener audioChangeListener = new focusChangeListener();
-        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
-        int focusResult = am.requestAudioFocus(audioChangeListener,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN);
 
         music_notification = new MusicNotification(getApplicationContext());
 
@@ -179,7 +170,6 @@ public class MusicService extends Service{
                 {
                     if(mp3check == true)
                     {
-                        Log.d("TEST","asdaad : " + mp3Check);
                         Preparse_music();
                         mp3check = false;
                     }
@@ -204,25 +194,32 @@ public class MusicService extends Service{
         {
             mMediaPlayer.start();
             sendMsgToSEEKBAR("PLAY");
-        }
+            playcheck = true;
 
-        music_notification.ExpandedlayoutNotification();
-        startForeground(music_notification.NOTIFICATION_PLAYER_ID, music_notification.mBuilder.build());
+            music_notification.ExpandedlayoutNotification();
+            startForeground(music_notification.NOTIFICATION_PLAYER_ID, music_notification.mBuilder.build());
+        }
     }
 
     // Stop Music
     public void Stop_music()
     {
+
+        playcheck = false;
         if(mMediaPlayer != null)
         {
             mMediaPlayer.stop();
             mMediaPlayer.reset();
             Preparse_music();
             sendMsgToSEEKBAR("STOP");
+            stopService((new Intent(getApplicationContext(), MainActivity.class)));
+            stopService(new Intent(getApplicationContext(), MusicService.class));
+            stopService(new Intent(getApplicationContext(), MusicNotification.class));
+            sendStopServicemsg("STOP");
 
             if(music_notification.mNotificationManager != null)
             {
-                music_notification.mNotificationManager.cancel(0x342);
+                music_notification.mNotificationManager.cancel(music_notification.NOTIFICATION_PLAYER_ID);
                 music_notification.mNotificationManager = null;
                 stopForeground(true);
             }
@@ -236,7 +233,7 @@ public class MusicService extends Service{
         {
             mMediaPlayer.pause();
             sendMsgToSEEKBAR("PLAY");
-            stopForeground(true);
+            playcheck = false;
         }
     }
 
@@ -284,6 +281,18 @@ public class MusicService extends Service{
         }
     }
 
+    private void sendStopServicemsg(String stopmsg)
+    {
+        try{
+            Bundle bundle = new Bundle();
+            bundle.putString("ServiceStop", stopmsg);
+            Message msg = Message.obtain(null, MSG_SEND_STOPSERVICE);
+            msg.setData(bundle);
+            mClient.send(msg);      // msg 보내기
+        } catch (RemoteException e) {
+        }
+    }
+
     private void sendMsgToSEEKBAR(String seekbar_status)
     {
         try{
@@ -293,32 +302,6 @@ public class MusicService extends Service{
             msg.setData(bundle);
             mClient.send(msg);      // msg 보내기
         } catch (RemoteException e) {
-        }
-    }
-
-    // Audio force
-    class focusChangeListener implements AudioManager.OnAudioFocusChangeListener{
-
-        @Override
-        public void onAudioFocusChange(int focusChange) {
-            switch (focusChange)
-            {
-                case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK):
-                    mMediaPlayer.setVolume(0.2f,0.2f);
-                    break;
-                case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT):
-                    Pause_music();
-                    break;
-                case (AudioManager.AUDIOFOCUS_LOSS):
-                    Pause_music();
-                    break;
-                case (AudioManager.AUDIOFOCUS_GAIN):
-                    mMediaPlayer.setVolume(1,1);
-                    Play_music();
-                    break;
-                default:
-                    break;
-            }
         }
     }
 }
